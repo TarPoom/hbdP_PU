@@ -35,6 +35,8 @@
             font-size: 1.5rem;
             cursor: pointer;
             text-shadow: 0 0 10px #0f0;
+            text-align: center;
+            padding: 20px;
         }
         .blink { animation: blinker 1s linear infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
@@ -52,9 +54,11 @@
             border-radius: 8px;
             padding: 25px;
             width: 90%;
-            max-width: 800px; /* ขยายขนาดขึ้นนิดหน่อยเพื่อรองรับรูป */
+            max-width: 800px;
             color: #0f0;
             display: none; 
+            max-height: 90vh; /* ป้องกันล้นจอในมือถือ */
+            overflow-y: auto; /* ให้เลื่อนลงได้ถ้าจอมือถือเล็กมาก */
         }
 
         .terminal-header {
@@ -64,6 +68,7 @@
             font-size: 1rem;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap; /* ให้หักบรรทัดในมือถือ */
         }
 
         /* จัด Layout รูปภาพและข้อความ */
@@ -81,7 +86,6 @@
             border: 1px solid #0f0;
             padding: 5px;
             background: #000;
-            position: relative;
         }
 
         .image-label {
@@ -98,6 +102,10 @@
             position: relative;
             overflow: hidden;
             border-bottom: 1px solid #0f0;
+            min-height: 150px; /* เผื่อกรณีรูปไม่โหลด จะได้มีกรอบไว้ */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .image-container img {
@@ -121,6 +129,7 @@
         /* กล่องข้อความ */
         .message-section {
             flex: 1;
+            width: 100%;
         }
 
         .message {
@@ -133,7 +142,7 @@
         /* ปุ่มกดเรียกบานอฟฟี่ */
         .action-btn {
             margin-top: 25px;
-            padding: 15px 25px;
+            padding: 15px 20px;
             background: rgba(0, 255, 0, 0.15);
             color: #0f0;
             border: 2px solid #0f0;
@@ -145,7 +154,7 @@
             transition: all 0.2s ease;
             width: 100%;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         .action-btn:hover {
@@ -168,19 +177,29 @@
             100% { transform: translateY(-10vh) rotate(360deg) scale(1.5); opacity: 0; }
         }
 
-        /* สำหรับหน้าจอมือถือ */
+        /* ----- สำหรับหน้าจอมือถือ (Responsive) ----- */
         @media (max-width: 768px) {
+            #card-container {
+                padding: 15px;
+                width: 85%;
+            }
             .content-wrapper {
-                flex-direction: column;
+                flex-direction: column; /* จับเรียงบนลงล่าง */
                 align-items: center;
+                gap: 15px;
             }
             .image-section {
                 width: 80%;
-                max-width: 250px;
+                max-width: 200px; /* ลดขนาดรูปลงในมือถือ */
             }
             .message {
                 min-height: auto;
-                font-size: 1rem;
+                font-size: 1rem; /* ลดขนาดฟอนต์ */
+                text-align: left;
+            }
+            .action-btn {
+                font-size: 0.9rem;
+                padding: 10px;
             }
         }
     </style>
@@ -257,6 +276,7 @@
         setInterval(drawMatrix, 35);
 
         // --- 2. Typewriter Effect ---
+        // ข้อความอัปเดตตามที่คุณต้องการแล้วครับ
         const messageText = `> TARGET DETECTED: พี่พู่ (P'Phu)
 > SCAN COMPLETE. VISUAL DATA RENDERED.
 
@@ -266,7 +286,7 @@
 ขอให้สมหวังนะครับ
 
 และที่สำคัญ! ขอให้มี บานอฟฟี่ อร่อยๆ 
-ตกถึงท้องตลอดทั้งปีเลยยยย! 🥧🍌✨
+ตกถึงท้องตลอดทั้งปีเลยยยย! 🧁🍌✨
 
 > SYSTEM STATUS: READY FOR CAKE.`;
 
@@ -282,6 +302,11 @@
                     document.getElementById("typewriter").innerHTML += char;
                 }
                 charIndex++;
+                
+                // เลื่อนหน้าจอลงอัตโนมัติเวลามันพิมพ์ไปเรื่อยๆ (ในกรณีจอมือถือเล็ก)
+                const card = document.getElementById("card-container");
+                card.scrollTop = card.scrollHeight;
+
                 setTimeout(typeWriter, speed);
             }
         }
@@ -291,12 +316,12 @@
             document.getElementById('enter-screen').style.display = 'none';
             document.getElementById('card-container').style.display = 'block';
             typeWriter();
-            spawnBanoffees(8); // ปล่อยนำร่องไปก่อนตอนเปิด
+            spawnBanoffees(8); 
         }
 
         // --- 4. Banoffee Overload System ---
         function banoffeeOverload() {
-            spawnBanoffees(40);
+            spawnBanoffees(30);
             
             // Screen Shake Effect
             document.body.style.transform = "translate(5px, 5px)";
@@ -306,7 +331,7 @@
         }
 
         function spawnBanoffees(amount) {
-            const emojis = ['🥧', '🍌', '🍰', '🍫'];
+            const emojis = ['🥧', '🍌', '🧁', '🍰'];
             for (let i = 0; i < amount; i++) {
                 setTimeout(() => {
                     const el = document.createElement('div');
@@ -314,7 +339,7 @@
                     el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
                     
                     el.style.left = Math.random() * 100 + 'vw';
-                    el.style.fontSize = (Math.random() * 3 + 1.5) + 'rem';
+                    el.style.fontSize = (Math.random() * 2 + 1.2) + 'rem'; // ปรับขนาดให้เล็กลงนิดนึงจะได้ไม่บังจอมือถือ
                     el.style.animationDuration = (Math.random() * 3 + 2) + 's';
                     
                     document.body.appendChild(el);
