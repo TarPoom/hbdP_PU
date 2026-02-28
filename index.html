@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday P'Phu - Banoffee Matrix</title>
+    <style>
+        /* ตั้งค่าพื้นฐาน */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* พื้นหลัง Matrix */
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* หน้าจอต้อนรับ (คลิกเพื่อเริ่ม) */
+        #enter-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #0f0;
+            font-size: 1.5rem;
+            cursor: pointer;
+            text-shadow: 0 0 10px #0f0;
+        }
+        .blink {
+            animation: blinker 1s linear infinite;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        /* กล่องการ์ดอวยพร (สไตล์ Terminal) */
+        #card-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            background: rgba(0, 20, 0, 0.85);
+            backdrop-filter: blur(5px);
+            border: 2px solid #0f0;
+            box-shadow: 0 0 30px #0f0, inset 0 0 15px #0f0;
+            border-radius: 8px;
+            padding: 30px;
+            width: 85%;
+            max-width: 650px;
+            text-align: left;
+            color: #0f0;
+            display: none; /* ซ่อนไว้ก่อนจนกว่าจะคลิก */
+        }
+
+        .terminal-header {
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .message {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            min-height: 200px;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        /* ปุ่มกดเรียกบานอฟฟี่ */
+        .action-btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: rgba(0, 255, 0, 0.1);
+            color: #0f0;
+            border: 2px solid #0f0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        .action-btn:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 20px #0f0;
+        }
+
+        /* เอฟเฟกต์บานอฟฟี่ลอยขึ้นมา */
+        .floating-banoffee {
+            position: absolute;
+            z-index: 5;
+            user-select: none;
+            pointer-events: none;
+            animation: floatUp linear forwards;
+            filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0.8));
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(105vh) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="enter-screen" onclick="startCard()">
+        <span class="blink">> CLICK TO DECRYPT PROTOCOL "P_PHU_BDAY" _</span>
+    </div>
+
+    <canvas id="matrix"></canvas>
+
+    <div id="card-container">
+        <div class="terminal-header">
+            <span>root@banoffee-server:~# ./happy_birthday.sh</span>
+            <span>[ SYSTEM: ONLINE ]</span>
+        </div>
+        <div class="message" id="typewriter"></div>
+        <button class="action-btn" onclick="banoffeeOverload()">🍰 Execute: BANOFFEE_OVERLOAD.exe 🍌</button>
+    </div>
+
+    <script>
+        // --- 1. ระบบฝนดาวตก Matrix (Matrix Rain Effect) ---
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // ตัวอักษรที่จะตกลงมา (ภาษาญี่ปุ่น + อังกฤษ + ตัวเลข + อิโมจิบานอฟฟี่/กล้วย)
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴッン🥧🍌🍰';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0F0'; // สีเขียว Matrix
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                
+                // ถ้าสุ่มได้อิโมจิ ให้มันสีสดใสขึ้นหน่อย
+                if(text === '🥧' || text === '🍌' || text === '🍰') {
+                    ctx.shadowColor = 'yellow';
+                    ctx.shadowBlur = 10;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // --- 2. ระบบพิมพ์ดีด (Typewriter Effect) ---
+        const messageText = `> ACCESS GRANTED.
+> TARGET: พี่พู่ (P'Phu)
+> DECRYPTING MESSAGE... SUCCESS!
+
+สุขสันต์วันเกิดนะครับ/คะ พี่พู่! 🎉
+ขอให้ปีนี้เป็นปีที่โค้ดรันผ่านฉลุย ไร้บั๊กมากวนใจ
+สุขภาพแข็งแรง มีพลังในการทำงานและการใช้ชีวิต
+ขอให้รอบตัวเต็มไปด้วยความสุข...
+และที่สำคัญ! ขอให้มี "บานอฟฟี่" อร่อยๆ 
+ตกถึงท้องตลอดทั้งปีเลยยยย! 🥧🍌✨
+
+> SYSTEM STATUS: READY FOR CAKE.`;
+
+        let charIndex = 0;
+        const speed = 40; // ความเร็วในการพิมพ์ (มิลลิวินาที)
+
+        function typeWriter() {
+            if (charIndex < messageText.length) {
+                let char = messageText.charAt(charIndex);
+                if (char === '\n') {
+                    document.getElementById("typewriter").innerHTML += '<br>';
+                } else {
+                    document.getElementById("typewriter").innerHTML += char;
+                }
+                charIndex++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+
+        // --- 3. การควบคุม UI ---
+        function startCard() {
+            document.getElementById('enter-screen').style.display = 'none';
+            document.getElementById('card-container').style.display = 'block';
+            typeWriter();
+            
+            // ปล่อยบานอฟฟี่เบาๆ ตอนเปิดการ์ด
+            spawnBanoffees(10);
+        }
+
+        // --- 4. ระบบเสกบานอฟฟี่เต็มหน้าจอ ---
+        function banoffeeOverload() {
+            spawnBanoffees(50); // เสกมา 50 ชิ้นรัวๆ
+            
+            // ทำให้หน้าจอสั่นเล็กน้อย (Effect)
+            document.body.style.transform = "translate(5px, 5px)";
+            setTimeout(() => document.body.style.transform = "translate(-5px, -5px)", 50);
+            setTimeout(() => document.body.style.transform = "translate(5px, -5px)", 100);
+            setTimeout(() => document.body.style.transform = "translate(0, 0)", 150);
+        }
+
+        function spawnBanoffees(amount) {
+            const emojis = ['🥧', '🍌', '🍰', '🍫'];
+            for (let i = 0; i < amount; i++) {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.className = 'floating-banoffee';
+                    el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                    
+                    // สุ่มตำแหน่ง ขนาด และความเร็ว
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.fontSize = (Math.random() * 3 + 1.5) + 'rem';
+                    el.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                    
+                    document.body.appendChild(el);
+
+                    // ลบ element ทิ้งเมื่อลอยพ้นจอ
+                    setTimeout(() => {
+                        el.remove();
+                    }, 5000);
+                }, i * 100); // ค่อยๆ ปล่อยทีละตัว
+            }
+        }
+
+        // อัปเดตขนาด Canvas เมื่อย่อขยายหน้าจอ
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
